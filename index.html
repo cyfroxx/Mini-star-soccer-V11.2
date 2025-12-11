@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini Star Soccer - V11.2 (Maç Hız Düzeltmesi)</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1a1a1a; color: #ecf0f1; margin: 0; display: flex; justify-content: center; align-items: center; height: 100vh; user-select: none; }
+        
+        #game-container { width: 420px; height: 680px; background-color: #2c3e50; border: 4px solid #34495e; position: relative; overflow: hidden; box-shadow: 0 0 30px rgba(0,0,0,0.7); display: flex; flex-direction: column; }
+        
+        /* HEADER */
+        .header { background: #2980b9; padding: 15px; display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; border-bottom: 3px solid #1abc9c; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        
+        /* SCREENS */
+        .screen { flex-grow: 1; padding: 15px; display: none; flex-direction: column; overflow-y: auto; }
+        .active { display: flex; }
+
+        /* SETUP SCREEN */
+        #screen-setup { justify-content: center; align-items: center; text-align: center; }
+        input[type="text"] { padding: 10px; margin: 10px 0; width: 80%; border: none; border-radius: 4px; font-size: 16px; background-color: #ecf0f1; color: #2c3e50; }
+        select { padding: 10px; margin: 10px 0; width: 80%; border: none; border-radius: 4px; font-size: 16px; background-color: #ecf0f1; color: #2c3e50; }
+        .setup-actions { margin-top: 20px; display: flex; flex-direction: column; width: 80%; }
+        
+        /* MENU GRID */
+        .dashboard-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 10px; 
+            margin-bottom: 15px; 
+        }
+        .card { background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border-left: 4px solid #f39c12; }
+        .card h3 { margin: 0 0 5px 0; font-size: 12px; color: #bdc3c7; text-transform: uppercase; }
+        .card p { margin: 0; font-size: 16px; font-weight: bold; }
+        .stat-card { border-left: 4px solid #1abc9c !important; }
+
+        /* PLAYER INFO */
+        .player-info { background: #34495e; padding: 10px; margin-bottom: 15px; border-radius: 4px; text-align: center; }
+        .player-name { font-size: 24px; font-weight: bold; color: #1abc9c; margin-bottom: 5px; }
+        .player-age { font-size: 14px; color: #f1c40f; }
+
+        /* BUTTONS */
+        button { background: linear-gradient(to bottom, #e67e22, #d35400); border: none; border-radius: 4px; color: white; padding: 12px; margin: 5px 0; cursor: pointer; font-weight: bold; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 0 #a04000; transition: transform 0.1s; }
+        button:active { transform: translateY(4px); box-shadow: none; }
+        button:disabled { background: #7f8c8d; box-shadow: none; cursor: not-allowed; opacity: 0.7; }
+        .btn-green { background: linear-gradient(to bottom, #2ecc71, #27ae60); box-shadow: 0 4px 0 #1e8449; }
+        .btn-blue { background: linear-gradient(to bottom, #3498db, #2980b9); box-shadow: 0 4px 0 #1f618d; }
+        .btn-save { background: linear-gradient(to bottom, #9b59b6, #8e44ad); box-shadow: 0 4px 0 #6c3483; }
+        .btn-gf { background: linear-gradient(to bottom, #e91e63, #c2185b); box-shadow: 0 4px 0 #880e4f; }
+        .btn-news { background: linear-gradient(to bottom, #95a5a6, #7f8c8d); box-shadow: 0 4px 0 #5f6a6c; }
+        .btn-train { background: linear-gradient(to bottom, #f39c12, #e67e22); box-shadow: 0 4px 0 #b75e11; }
+        .btn-casino { background: linear-gradient(to bottom, #c0392b, #a92317); box-shadow: 0 4px 0 #881a10; }
+        .btn-shop { background: linear-gradient(to bottom, #8e44ad, #6c3483); box-shadow: 0 4px 0 #4a235a; }
+
+        /* TRANSFER SCREEN */
+        #screen-transfer { justify-content: flex-start; }
+        .transfer-offer { background: #34495e; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 5px solid #1abc9c; }
+        .transfer-offer h4 { margin-top: 0; color: #f1c40f; }
+        .transfer-offer button { width: 100%; }
+
+        /* LEAGUE TABLE */
+        table { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; }
+        th { background: #16a085; padding: 5px; text-align: left; }
+        td { padding: 5px; border-bottom: 1px solid #34495e; }
+        .my-team { background: rgba(241, 196, 15, 0.2); font-weight: bold; color: #f1c40f; }
+
+        /* MATCH SCREEN */
+        #match-log { flex-grow: 1; background: #222; padding: 10px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; border: 1px solid #444; margin-bottom: 10px; height: 200px; }
+        .log-item { margin-bottom: 6px; padding-bottom: 4px; border-bottom: 1px dashed #333; color: #aaa; }
+        .highlight { color: #f1c40f; font-weight: bold; background: rgba(241, 196, 15, 0.1); padding: 2px; }
+        .score-board { background: #1a1a1a; padding: 15px; text-align: center; font-size: 24px; font-weight: bold; color: #e74c3c; border: 2px solid #555; margin-bottom: 10px; border-radius: 5px; }
+
+        /* SHOOTING CANVAS */
+        #shoot-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 99; }
+        canvas { border: 2px solid white; cursor: crosshair; background-color: #1a1a1a; }
+        #shoot-status { color: white; font-size: 18px; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body onload="initGame()">
+
+<div id="game-container">
+    <div class="header">
+        <span id="ui-money">💰 0$</span>
+        <span id="ui-energy">⚡ 100%</span>
+        <span id="ui-season">📅 Sezon 1 | Maç 0 / 8</span>
+    </div>
+
+    <div id="screen-setup" class="screen active">
+        <h1 style="color:#1abc9c;">Kariyerine Başla</h1>
+        <p>Lütfen adınızı, soyadınızı ve kariyerinize başlayacağınız ülkeyi seçin.</p>
+        
+        <select id="setup-country">
+            <option value="TR">🇹🇷 Türkiye</option>
+            <option value="EN">🏴󠁧󠁢󠁥󠁮󠁧󠁿 İngiltere</option>
+            <option value="DE">🇩🇪 Almanya</option>
+            <option value="IT">🇮🇹 İtalya</option>
+            <option value="ES">🇪🇸 İspanya</option>
+        </select>
+
+        <input type="text" id="setup-name" placeholder="Adınız">
+        <input type="text" id="setup-surname" placeholder="Soyadınız">
+        
+        <div class="setup-actions">
+            <button class="btn-green" onclick="createPlayer(true)">YENİ KARİYER BAŞLAT (16 Yaş)</button>
+            <button class="btn-blue" id="btn-load-game" style="display:none;" onclick="loadGame()">KAYITLI KARİYERİ YÜKLE</button>
+        </div>
+    </div>
+
+    <div id="screen-menu" class="screen">
+        
+        <div class="player-info">
+            <div class="player-name" id="ui-player-name"></div>
+            <div class="player-age" id="ui-player-age"></div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="card stat-card" style="border-color: #f1c40f;">
+                <h3>Şut Yeteneği</h3>
+                <p id="val-skill">20</p>
+                <div class="bar-bg"><div id="bar-skill" class="bar-fill" style="width: 20%; background: #f1c40f;"></div></div>
+            </div>
+            <div class="card stat-card" style="border-color: #3498db;">
+                <h3>Hız/Fizik (Pace)</h3>
+                <p id="val-pace">20</p>
+                <div class="bar-bg"><div id="bar-pace" class="bar-fill" style="width: 20%; background: #3498db;"></div></div>
+            </div>
+            <div class="card" style="border-color: #9b59b6;">
+                <h3>Takım İlişkisi</h3>
+                <p id="val-rel">50%</p>
+                <div class="bar-bg"><div id="bar-rel" class="bar-fill" style="width: 50%; background: #9b59b6;"></div></div>
+            </div>
+            <div class="card" style="border-color: #e91e63;">
+                <h3>Kız Arkadaş İlişkisi</h3>
+                <p id="val-gf-rel">50%</p>
+                <div class="bar-bg"><div id="bar-gf-rel" class="bar-fill" style="width: 50%; background: #e91e63;"></div></div>
+            </div>
+        </div>
+        
+        <div class="dashboard-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 20px;">
+            <div class="card" style="border-color: #3498db;">
+                <h3>Mevcut Takım</h3>
+                <p id="ui-team">Acemi Spor</p>
+                <div style="font-size:11px; color:#aaa; margin-top:2px;">Maaş: <span id="ui-salary">5</span>$/maç</div>
+            </div>
+            <div class="card" style="border-color: #e74c3c;">
+                <h3>Lig Durumu</h3>
+                <p id="ui-rank">Sıra: 10.</p>
+                <div style="font-size:11px; color:#aaa; margin-top:2px;">Puan: 0</div>
+            </div>
+        </div>
+
+        <button class="btn-green" id="btn-play-match" onclick="startGame()">⚽ MAÇA ÇIK (-15 NRG)</button>
+        
+        <h3 style="margin: 10px 0 0 0; color:#bdc3c7;">ANTRENMANLAR (-10 NRG)</h3>
+        <button class="btn-train" onclick="train('skill')">🎯 TEKNİK ANTRENMAN (Şut Artır)</button>
+        <button class="btn-train" onclick="train('pace')">🏃 FİZİK ANTRENMANI (Hız Artır)</button>
+        <button class="btn-train" onclick="train('relations')">🤝 TAKIM ANTRENMANI (İlişki Artır)</button>
+
+        <h3 style="margin: 10px 0 0 0; color:#bdc3c7;">Saha Dışı</h3>
+        <button class="btn-casino" onclick="showCasino()">🃏 KUMARHANE (Risk Al!)</button>
+        <button class="btn-shop" onclick="showShop()">💎 LÜKS EŞYA DÜKKANI</button>
+        <button class="btn-news" onclick="showNews()">📰 HABERLER & SOSYAL MEDYA</button>
+        <button class="btn-gf" onclick="goOnDate()">❤️ KIZ ARKADAŞINLA BULUŞ (-20$)</button>
+        <button onclick="buyDrink()">🥤 ENERJİ İÇECEĞİ AL (10$)</button>
+        <button class="btn-blue" onclick="showLeague()">🏆 LİG TABLOSU</button>
+        <button class="btn-save" onclick="saveGame()">💾 KARİYERİ KAYDET</button>
+        
+        <div id="msg-box" style="margin-top:10px; font-size:12px; color:#e74c3c; text-align:center; height:20px; font-weight:bold;"></div>
+    </div>
+
+    <div id="screen-match" class="screen">
+        <div class="score-board">
+            <span id="match-score">0 - 0</span>
+            <div style="font-size:14px; color:#aaa; margin-top:5px;" id="match-time">00:00</div>
+        </div>
+        <div id="match-log"></div>
+        <button id="btn-end-match" style="display:none;" onclick="endMatch()" class="btn-green">SOYUNMA ODASINA DÖN</button>
+    </div>
+
+    <div id="screen-league" class="screen">
+        <h2 style="text-align:center; color:#f1c40f;">PUAN DURUMU (<span id="current-league-name">1. LİG</span>)</h2>
+        <div id="league-table-container">
+            <table id="league-table">
+                </table>
+        </div>
+        <button onclick="backToMenu()" style="margin-top:20px;">GERİ DÖN</button>
+    </div>
+
+    <div id="screen-news" class="screen">
+        <h2 style="text-align:center; color:#95a5a6;">🗞️ Son Dakika Haberler</h2>
+        <div id="news-content">
+            </div>
+        <button onclick="backToMenu()" style="margin-top:20px;">GERİ DÖN</button>
+    </div>
+
+    <div id="screen-casino" class="screen">
+        <h2 style="text-align:center; color:#c0392b;">🃏 BLACKJACK (21)</h2>
+        
+        <div id="casino-status">Bahis Yap ve Oyuna Başla!</div>
+        
+        <div style="margin-top: 15px;">
+            <div class="dealer-info">Kasa Puanı: <span id="dealer-score">?</span></div>
+            <div class="card-hand" id="dealer-hand"></div>
+        </div>
+
+        <div style="margin-top: 15px;">
+            <div class="dealer-info">Senin Puanın: <span id="player-score">0</span></div>
+            <div class="card-hand" id="player-hand"></div>
+        </div>
+
+        <div class="casino-actions">
+            <button class="btn-green" id="btn-hit" onclick="hit()" disabled>Kart Çek</button>
+            <button class="btn-blue" id="btn-stand" onclick="stand()" disabled>Dur</button>
+            <button class="btn-save" onclick="backToMenu()">Çıkış</button>
+        </div>
+
+        <h3 style="margin: 15px 0 5px 0; color:#bdc3c7;">BAHİS SEÇENEKLERİ</h3>
+        <div class="bet-buttons" id="bet-options">
+            </div>
+    </div>
+    
+    <div id="screen-shop" class="screen">
+        <h2 style="text-align:center; color:#8e44ad;">💎 LÜKS EŞYA DÜKKANI</h2>
+        <div id="shop-items">
+            </div>
+        <button onclick="backToMenu()" style="margin-top:20px;">GERİ DÖN</button>
+    </div>
+
+
+    <div id="shoot-overlay">
+        <div id="shoot-status">YÖNÜ SEÇ!</div>
+        <canvas id="gameCanvas" width="350" height="500"></canvas>
+        <div style="color:#aaa; font-size:12px; margin-top:5px;">1. Tık: YÖN | 2. Tık: KAVİS (FALSO)</div>
+    </div>
+
+    <div id="screen-transfer" class="screen">
+        <h2 style="text-align:center; color:#1abc9c;">TRANSFER DÖNEMİ GÖRÜŞMELERİ</h2>
+        <p style="text-align:center; color:#ccc;">Performansına göre sana sunulan teklifler aşağıdadır. Lütfen yeni kulübünü seç veya mevcut takımında kal.</p>
+
+        <div id="transfer-offers">
+            </div>
+
+        <button class="btn-news" onclick="acceptTransfer(player.teamId, player.salary)">MEVCUT TAKIMIMDA KAL</button>
+    </div>
+</div>
+
+<script>
+    // --- VERİ YAPILARI ---
+    const TEAMS_DATA = {
+        'TR': { 
+            name: "Türkiye", tier1: "Süper Lig", tier2: "1. Lig", 
+            teams: ["Galaktik Spor", "Fener Yıldızı", "Kartal Gücü", "Trabzon Fırtına", "Bursa Timsah", "Ankara Demir", "İzmir Güneşi", "Antalya Akrep", "Sivas Yiğido", "Acemi Spor"] 
+        },
+        'EN': { 
+            name: "İngiltere", tier1: "Premier Lig", tier2: "Championship", 
+            teams: ["London Lions", "Manchester Reds", "Merseyside Blues", "Northern City", "Coastal Albion", "Midland FC", "Wessex Rovers", "Bristol Kings", "York United", "Eastern Athletic"] 
+        },
+        'DE': { 
+            name: "Almanya", tier1: "Bundesliga", tier2: "2. Bundesliga", 
+            teams: ["Bayern Kings", "Dortmund Stars", "Hamburg SV", "Koln United", "Berlin Dynamo", "Rhine FC", "Black Forest", "Leipzig Eagles", "Stuttgart SC", "Ruhr Valley"] 
+        },
+        'IT': { 
+            name: "İtalya", tier1: "Serie A", tier2: "Serie B", 
+            teams: ["Juventus Giants", "Milan AC", "Inter Milano", "Roma Wolves", "Napoli FC", "Venice Calcio", "Palermo Stars", "Turin Bulls", "Bologna 1909", "Florence United"] 
+        },
+        'ES': { 
+            name: "İspanya", tier1: "La Liga", tier2: "Segunda División", 
+            teams: ["Madrid FC", "Barcelona Stars", "Sevilla Giants", "Valencia CF", "Bilbao Athletic", "Malaga City", "Zaragoza FC", "Vigo Celtic", "Canary United", "Basque Rovers"] 
+        },
+    };
+    
+    const LEAGUE_SIZE = 10;
+    const MATCHES_PER_SEASON = (LEAGUE_SIZE / 2) * 2 - 2; 
+
+    let player = {};
+    let league = []; 
+
+    const LUXURY_ITEMS = [
+        { id: 'car', name: "Lüks Araba 🚗", price: 5000, desc: "Takım (+5) ve Kız Arkadaş (+10) İlişkisi kazandırır." },
+        { id: 'jet', name: "Özel Jet ✈️", price: 10000, desc: "Enerji Toparlanma Hızı kalıcı olarak %10 artar (Yeni sezonda etki eder)." },
+        { id: 'mansion', name: "Malikane 🏠", price: 20000, desc: "Kalıcı Şut ve Hız (+2) Yeteneği bonusu verir." },
+    ];
+
+    const defaultPlayerState = {
+        name: "", surname: "", age: 16, season: 1, country: "", teamId: -1, 
+        money: 20, energy: 100, skill: 20, pace: 20, 
+        relations: 50, girlfriendRel: 50, 
+        salary: 5, goals: 0, week: 1, matchesPlayed: 0, leagueTier: 2,
+        inventory: {}, 
+        paceEffect: 0, 
+        skillEffect: 0, 
+    };
+
+    const BLACKJACK_BETS = [5, 10, 20, 40, 50, 75, 100, 200];
+
+
+    // --- SİSTEM VE KAYIT/YÜKLEME FONKSİYONLARI ---
+
+    function switchScreen(id) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+    }
+
+    function initGame() {
+        const savedData = localStorage.getItem('nss_career_v11'); 
+        if (savedData) {
+            document.getElementById('btn-load-game').style.display = 'block';
+        }
+        switchScreen('screen-setup');
+    }
+    
+    function createPlayer(isNewGame) {
+        if (isNewGame) {
+            const name = document.getElementById('setup-name').value.trim();
+            const surname = document.getElementById('setup-surname').value.trim();
+            const country = document.getElementById('setup-country').value;
+
+            if (!name || !surname) {
+                alert("Lütfen adınızı ve soyadınızı girin!");
+                return;
+            }
+
+            player = { ...defaultPlayerState, name: name, surname: surname, country: country };
+            
+            // Tier 1 şansı %30 olarak tüm ülkelere uygulandı
+            let tier = 2; 
+            if (Math.random() < 0.3) {
+                tier = 1; 
+            } 
+            
+            initLeague(country, tier); 
+            updateUI();
+            switchScreen('screen-menu');
+        }
+    }
+
+    function saveGame() {
+        try {
+            localStorage.setItem('nss_career_v11_player', JSON.stringify(player));
+            localStorage.setItem('nss_career_v11_league', JSON.stringify(league));
+            localStorage.setItem('nss_career_v11', 'true'); 
+            showMsg("Kariyer başarıyla kaydedildi!");
+        } catch (e) {
+            showMsg("Hata: Kariyer kaydedilemedi.");
+        }
+    }
+    
+    function loadGame() {
+        try {
+            const savedPlayer = localStorage.getItem('nss_career_v11_player');
+            const savedLeague = localStorage.getItem('nss_career_v11_league');
+            
+            if (savedPlayer && savedLeague) {
+                let loadedPlayer = JSON.parse(savedPlayer);
+                
+                // Uyumluğunu sağla
+                if (typeof loadedPlayer.inventory === 'undefined') loadedPlayer.inventory = {};
+                if (typeof loadedPlayer.paceEffect === 'undefined') loadedPlayer.paceEffect = 0;
+                if (typeof loadedPlayer.skillEffect === 'undefined') loadedPlayer.skillEffect = 0;
+                if (typeof loadedPlayer.country === 'undefined') loadedPlayer.country = 'TR'; 
+                
+                player = loadedPlayer;
+                league = JSON.parse(savedLeague);
+                updateUI();
+                switchScreen('screen-menu');
+                showMsg(`Kayıtlı kariyer yüklendi: ${player.name} ${player.surname} (${player.age} Yaş)`);
+            } else {
+                alert("Kayıt dosyası bulunamadı veya bozuk.");
+                document.getElementById('btn-load-game').style.display = 'none';
+            }
+        } catch (e) {
+            alert("Kayıt dosyası yüklenirken hata oluştu.");
+        }
+    }
+
+    // --- LİG YAPISI VE UI FONKSİYONLARI ---
+    
+    function getLeagueName(country, tier) {
+        const data = TEAMS_DATA[country];
+        return data ? (tier === 1 ? data.tier1 : data.tier2) : "Bilinmeyen Lig";
+    }
+    
+    function getPlayerSkill() {
+        return Math.min(100, player.skill + (player.inventory.mansion ? 2 : 0) - player.skillEffect);
+    }
+    function getPlayerPace() {
+        return Math.min(100, player.pace + (player.inventory.mansion ? 2 : 0) - player.paceEffect);
+    }
+    function getEnergyRegenBonus() {
+        return player.inventory.jet ? 1.1 : 1.0;
+    }
+
+    function initLeague(countryCode, startingTier) {
+        const teamsList = TEAMS_DATA[countryCode].teams;
+        const totalTeams = teamsList.length;
+        const half = totalTeams / 2; 
+
+        // Sadece yeni ülke ligini oluştur
+        league = teamsList.map((name, index) => ({
+            id: index,
+            name: name,
+            country: countryCode,
+            tier: index < half ? 1 : 2, 
+            points: 0,
+            played: 0,
+            win: 0,
+            draw: 0,
+            loss: 0
+        }));
+
+        // Oyuncuyu doğru lige ve takıma ata
+        player.country = countryCode;
+        player.leagueTier = startingTier;
+        
+        let availableTeams = league.filter(t => t.tier === startingTier);
+        // Rastgele takım seç
+        const randomTeam = availableTeams[Math.floor(Math.random() * availableTeams.length)];
+        player.teamId = randomTeam.id;
+        
+        // Başlangıç maaşını lige ve ülkeye göre ayarla
+        let baseSalary = 5;
+        if (countryCode === 'TR') {
+            baseSalary = startingTier === 1 ? 15 : 5;
+        } else { // Diğer büyük ligler
+            baseSalary = startingTier === 1 ? 30 : 10;
+        }
+        player.salary = baseSalary;
+    }
+
+    function getTeamLeague(teamId) {
+        // Doğru takım nesnesini bulmak için league listesini kullan
+        const team = league.find(t => t.id === teamId && t.country === player.country);
+        return team ? team.tier : player.leagueTier;
+    }
+
+    function updateUI() {
+        const myTeam = league.find(t => t.id === player.teamId);
+        const currentLeagueName = getLeagueName(player.country, myTeam ? myTeam.tier : player.leagueTier);
+
+        document.getElementById('ui-money').innerText = `💰 ${player.money}$`;
+        document.getElementById('ui-energy').innerText = `⚡ ${player.energy}%`;
+        document.getElementById('ui-season').innerText = `📅 Sezon ${player.season} | Maç ${player.matchesPlayed} / ${MATCHES_PER_SEASON}`;
+        
+        document.getElementById('ui-player-name').innerText = `${player.name} ${player.surname}`.toUpperCase();
+        document.getElementById('ui-player-age').innerText = `${player.age} YAŞ | ${TEAMS_DATA[player.country].name} - ${currentLeagueName}`;
+
+        document.getElementById('ui-team').innerText = myTeam ? myTeam.name : "Bilinmiyor";
+        document.getElementById('ui-salary').innerText = player.salary;
+        
+        const currentTier = myTeam ? myTeam.tier : player.leagueTier;
+        let tierTeams = league.filter(t => t.tier === currentTier && t.country === player.country);
+        let sorted = [...tierTeams].sort((a,b) => b.points - a.points);
+        let rank = sorted.findIndex(t => t.id === player.teamId) + 1;
+        document.getElementById('ui-rank').innerText = `Sıra: ${rank}.`;
+
+        const currentSkill = getPlayerSkill();
+        document.getElementById('val-skill').innerText = currentSkill;
+        document.getElementById('bar-skill').style.width = currentSkill + '%';
+        
+        const currentPace = getPlayerPace();
+        document.getElementById('val-pace').innerText = currentPace;
+        document.getElementById('bar-pace').style.width = currentPace + '%';
+
+        document.getElementById('val-rel').innerText = player.relations + '%';
+        document.getElementById('bar-rel').style.width = player.relations + '%';
+        
+        document.getElementById('val-gf-rel').innerText = player.girlfriendRel + '%';
+        document.getElementById('bar-gf-rel').style.width = player.girlfriendRel + '%';
+        
+        const playButton = document.getElementById('btn-play-match');
+        if (player.matchesPlayed >= MATCHES_PER_SEASON) {
+            playButton.disabled = true;
+            playButton.innerText = "SEZON BİTTİ! TRANSFERLERİ KONTROL ET.";
+            document.getElementById('ui-season').classList.add('highlight');
+        } else {
+            playButton.disabled = player.energy < 15;
+            playButton.innerText = "⚽ MAÇA ÇIK (-15 NRG)";
+            document.getElementById('ui-season').classList.remove('highlight');
+        }
+    }
+
+    function showMsg(msg) {
+        document.getElementById('msg-box').innerText = msg;
+        setTimeout(() => document.getElementById('msg-box').innerText = "", 2500);
+    }
+
+    function backToMenu() { 
+        switchScreen('screen-menu'); 
+        updateUI(); 
+    }
+    
+    // --- OYUN İÇİ AKSİYONLAR ---
+    function train(type) {
+        if(player.energy < 10) return showMsg("Çok yorgunsun! İçecek al.");
+        
+        player.energy -= 10;
+        let moraleBoost = (player.girlfriendRel > 75 ? 2 : 0);
+        let msg = "";
+
+        switch(type) {
+            case 'skill':
+                let skillBoost = 4 + moraleBoost;
+                player.skill = Math.min(100, player.skill + skillBoost); 
+                player.relations = Math.max(0, player.relations - 2); 
+                msg = `Şut tekniğin gelişti (+${skillBoost}). Takım ilişkisi hafifçe düştü (-2).`;
+                break;
+            case 'pace':
+                let paceBoost = 5 + moraleBoost;
+                player.pace = Math.min(100, player.pace + paceBoost);
+                player.relations = Math.max(0, player.relations - 3); 
+                msg = `Fizik antrenmanı yaptın, hızın arttı (+${paceBoost}). (-3 Takım İliş.)`;
+                break;
+            case 'relations':
+                let relBoost = 12 + (getPlayerPace() > 60 ? 5 : 0); 
+                player.relations = Math.min(100, player.relations + relBoost + (player.inventory.car ? 5 : 0));
+                msg = `Takım arkadaşlarınla kaynaştın. İlişki +${relBoost}.`;
+                break;
+        }
+        
+        showMsg(msg);
+        updateUI();
+        saveGame();
+    }
+
+    function buyDrink() {
+        if(player.money < 10) return showMsg("Para yetersiz!");
+        player.money -= 10;
+        player.energy = Math.min(100, player.energy + 40 * getEnergyRegenBonus());
+        showMsg("Enerji tavan yaptı!");
+        updateUI();
+        saveGame();
+    }
+    
+    function goOnDate() {
+        if(player.money < 20) return showMsg("Bu randevu için en az 20$ lazım.");
+        
+        player.money -= 20;
+        player.girlfriendRel = Math.min(100, player.girlfriendRel + 15 + (player.inventory.car ? 10 : 0));
+        
+        player.relations = Math.max(0, player.relations - 5); 
+        
+        showMsg("Harika bir akşam yemeği yedin! İlişki +15. (Takım iliş. -5)");
+        updateUI();
+        saveGame();
+    }
+
+    function showLeague() {
+        const table = document.getElementById('league-table');
+        table.innerHTML = `<tr><th>Sıra</th><th>Takım</th><th>P</th><th>O</th><th>G-B-M</th></tr>`;
+        
+        const currentTier = getTeamLeague(player.teamId);
+        document.getElementById('current-league-name').innerText = getLeagueName(player.country, currentTier);
+        
+        let tierTeams = league.filter(t => t.tier === currentTier && t.country === player.country);
+        let sorted = [...tierTeams].sort((a,b) => b.points - a.points);
+        
+        sorted.forEach((t, i) => {
+            let row = document.createElement('tr');
+            if(t.id === player.teamId) row.className = "my-team";
+            row.innerHTML = `<td>${i+1}</td><td>${t.name}</td><td>${t.points}</td><td>${t.played}</td><td>${t.win}-${t.draw}-${t.loss}</td>`;
+            table.appendChild(row);
+        });
+        
+        const screenLeague = document.getElementById('screen-league');
+        let existingNewSeasonBtn = screenLeague.querySelector('.btn-green[onclick="startTransferPeriod()"]');
+        if (player.matchesPlayed >= MATCHES_PER_SEASON) {
+            if (!existingNewSeasonBtn) {
+                let transferBtn = document.createElement('button');
+                transferBtn.className = 'btn-green';
+                transferBtn.innerText = 'TRANSFER GÖRÜŞMELERİNE BAŞLA';
+                transferBtn.onclick = startTransferPeriod;
+                screenLeague.insertBefore(transferBtn, screenLeague.lastElementChild); 
+            }
+        } else if (existingNewSeasonBtn) {
+            existingNewSeasonBtn.remove();
+        }
+
+        switchScreen('screen-league');
+    }
+
+    // --- LÜKS EŞYA DÜKKANI ---
+
+    function initShop() {
+        const shopDiv = document.getElementById('shop-items');
+        shopDiv.innerHTML = '';
+        
+        LUXURY_ITEMS.forEach(item => {
+            const btnText = player.inventory[item.id] ? "SATIN ALINDI" : `AL (${item.price}$)`;
+            const isDisabled = player.inventory[item.id] || player.money < item.price;
+            
+            const itemDiv = document.createElement('div');
+            itemDiv.className = 'shop-item';
+            itemDiv.innerHTML = `
+                <div>
+                    <h4>${item.name}</h4>
+                    <p>${item.desc}</p>
+                </div>
+                <button class="btn-shop" onclick="buyItem('${item.id}', ${item.price})" ${isDisabled ? 'disabled' : ''}>
+                    ${btnText}
+                </button>
+            `;
+            shopDiv.appendChild(itemDiv);
+        });
+    }
+
+    function buyItem(itemId, price) {
+        if (player.money >= price) {
+            player.money -= price;
+            player.inventory[itemId] = true;
+            
+            let msg = `${LUXURY_ITEMS.find(i => i.id === itemId).name} satın alındı!`;
+
+            if (itemId === 'car') {
+                player.relations = Math.min(100, player.relations + 5);
+                player.girlfriendRel = Math.min(100, player.girlfriendRel + 10);
+                msg += " (İlişki bonusları eklendi)";
+            } 
+            
+            showMsg(msg);
+            initShop();
+            updateUI();
+            saveGame();
+        } else {
+            showMsg("Bu eşyayı almak için yeterli paran yok!");
+        }
+    }
+
+    function showShop() {
+        initShop();
+        switchScreen('screen-shop');
+    }
+
+    // --- SEZON GEÇİŞİ VE TRANSFER ---
+
+    function startTransferPeriod() {
+        const offersDiv = document.getElementById('transfer-offers');
+        offersDiv.innerHTML = '';
+        
+        // 1. Genel Performans Skoru
+        const goalAvg = (player.goals / player.matchesPlayed) || 0;
+        const overallScore = Math.floor(((getPlayerSkill() + getPlayerPace()) / 2) + (goalAvg * 5));
+        
+        // 2. Teklifleri Oluştur
+        const offers = generateTransferOffers(overallScore);
+
+        offers.forEach(offer => {
+            const offerDiv = document.createElement('div');
+            offerDiv.className = 'transfer-offer';
+            offerDiv.innerHTML = `
+                <h4>${offer.teamName} (${TEAMS_DATA[offer.country].name} - ${getLeagueName(offer.country, offer.tier)})</h4>
+                <p>Maaş Teklifi: <strong>${offer.salary}$</strong></p>
+                <p>Beklenti: ${offer.expectation}</p>
+                <button class="btn-green" onclick="acceptTransfer(${offer.teamId}, ${offer.salary}, '${offer.country}', ${offer.tier})">TEKLİFİ KABUL ET</button>
+            `;
+            offersDiv.appendChild(offerDiv);
+        });
+        
+        switchScreen('screen-transfer');
+    }
+
+    function generateTransferOffers(score) {
+        const currentCountry = player.country;
+        let potentialOffers = [];
+        let allTeams = [];
+        
+        // Bütün ligleri tek bir listede topla 
+        for (const countryCode in TEAMS_DATA) {
+            TEAMS_DATA[countryCode].teams.forEach((teamName, index) => {
+                const teamTier = index < LEAGUE_SIZE / 2 ? 1 : 2;
+                let salaryBase = teamTier === 1 ? 30 : 10;
+                let scoreMin = teamTier === 1 ? 60 : 35;
+                
+                // Türkiye'deki maaş skalası düşük
+                if (countryCode === 'TR') {
+                    salaryBase = teamTier === 1 ? 15 : 5;
+                    scoreMin = teamTier === 1 ? 50 : 25;
+                }
+                
+                allTeams.push({
+                    id: index,
+                    name: teamName,
+                    country: countryCode,
+                    tier: teamTier,
+                    salaryBase: salaryBase, 
+                    scoreMin: scoreMin 
+                });
+            });
+        }
+        
+        for(let i = 0; i < 4; i++) {
+            let filteredTeams = allTeams.filter(t => 
+                t.scoreMin <= score + 10 && 
+                t.id !== player.teamId && 
+                !potentialOffers.some(offer => offer.teamId === t.id && offer.country === t.country) 
+            );
+
+            if(filteredTeams.length === 0) {
+                 filteredTeams = allTeams.filter(t => !potentialOffers.some(offer => offer.teamId === t.id && offer.country === t.country));
+            }
+
+            if(filteredTeams.length > 0) {
+                const selectedTeam = filteredTeams[Math.floor(Math.random() * filteredTeams.length)];
+                
+                let salaryMultiplier = 1 + (score / 100); 
+                let newSalary = Math.floor(selectedTeam.salaryBase * salaryMultiplier);
+                newSalary = Math.max(player.salary + 5, newSalary); 
+
+                let expectation = selectedTeam.tier === 1 ? "Şampiyonluk ve Avrupa Kupaları" : "İlk 3 sıra veya Kümede Kalma";
+
+                potentialOffers.push({
+                    teamId: selectedTeam.id,
+                    teamName: selectedTeam.name,
+                    country: selectedTeam.country,
+                    tier: selectedTeam.tier,
+                    salary: newSalary,
+                    expectation: expectation
+                });
+            }
+        }
+
+        return potentialOffers;
+    }
+
+    function acceptTransfer(newTeamId, newSalary, newCountry = player.country, newTier = player.leagueTier) {
+        
+        player.age++;
+        player.season++;
+        player.matchesPlayed = 0;
+        player.goals = 0;
+        player.salary = newSalary;
+        player.country = newCountry;
+        player.leagueTier = newTier;
+        player.relations = 50; 
+        
+        // Yaşlanma etkisi
+        if (player.age >= 28) {
+            player.paceEffect = Math.min(30, player.paceEffect + 5); 
+            player.skillEffect = Math.min(20, player.skillEffect + 2); 
+            alert(`YAŞLANIYORSUN! Hız (-5) ve Şut (-2) yeteneğin kalıcı olarak geriledi.`);
+        }
+        
+        // ÖNEMLİ: Yeni ligi oluştur ve oyuncuyu yeni takıma ata
+        initLeague(player.country, player.leagueTier);
+
+        // Yeni takımı bul
+        const newTeam = league.find(t => t.id === newTeamId && t.country === player.country && t.tier === newTier);
+        if (newTeam) {
+             player.teamId = newTeam.id; // Doğru takım ID'sini atadık
+        } else {
+            // Eğer transfer edilen takım yeni ligde bulunamıyorsa (ki bu kod yapısıyla zor), 
+            // rastgele bir takım ata (mevcut initLeague zaten bunu yapmalıydı ama koruma amaçlı)
+            player.teamId = league.filter(t => t.tier === newTier && t.country === player.country)[0].id; 
+        }
+
+        showMsg(`HOŞ GELDİN! ${player.season}. Sezon Başladı. Yeni Takım: ${league.find(t => t.id === player.teamId && t.country === player.country).name}`);
+        backToMenu();
+        saveGame();
+    }
+
+    // --- MAÇ MOTORU VE EKONOMİ ---
+    let matchState = {
+        timer: 0, interval: null, scoreP: 0, scoreO: 0, active: false, currentGoals: 0
+    };
+
+    function startGame() {
+        if(player.energy < 15 || player.matchesPlayed >= MATCHES_PER_SEASON) return showMsg(player.matchesPlayed >= MATCHES_PER_SEASON ? "Sezon bitti!" : "Maç için en az 15 Enerji lazım.");
+        
+        player.energy -= 15;
+        
+        // Sakatlık kontrolü:
+        if (player.energy < 20 && Math.random() < 0.15) {
+            alert(`SAKATLIK! Çok yorgun oynadın. ${Math.ceil(Math.random() * 3)} hafta sahalardan uzak kalacaksın.`);
+            player.energy = 0;
+            updateUI();
+            saveGame();
+            return switchScreen('screen-menu');
+        }
+
+        switchScreen('screen-match');
+        document.getElementById('match-log').innerHTML = "";
+        document.getElementById('btn-end-match').style.display = "none";
+        
+        matchState.timer = 0;
+        matchState.scoreP = 0;
+        matchState.scoreO = 0;
+        matchState.currentGoals = 0; 
+        matchState.active = true;
+        updateMatchScore();
+
+        log("Hakem düdüğü çaldı, maç başladı!");
+        
+        // HATA DÜZELTME: Her zamanlayıcı başlatmadan önce eskisini temizle.
+        if (matchState.interval) {
+            clearInterval(matchState.interval);
+        }
+        matchState.interval = setInterval(gameLoop, 800);
+    }
+    
+    function log(text, type="normal") {
+        const div = document.createElement('div');
+        div.className = "log-item " + (type === "imp" ? "highlight" : "");
+        div.innerText = `${matchState.timer}' ${text}`;
+        const box = document.getElementById('match-log');
+        box.prepend(div);
+        box.scrollTop = 0; 
+    }
+    
+    function updateMatchScore() {
+        document.getElementById('match-score').innerText = `${matchState.scoreP} - ${matchState.scoreO}`;
+    }
+
+    function gameLoop() {
+        if(!matchState.active) return;
+        matchState.timer += 3;
+        document.getElementById('match-time').innerText = matchState.timer + ":00";
+
+        let rnd = Math.random();
+        if(rnd < 0.2) {
+            let keeperDifficulty = 0.4 - (getPlayerPace() / 300); 
+            if(Math.random() < keeperDifficulty) {
+                matchState.scoreO++;
+                log("Rakip affetmedi! GOL.", "imp");
+                updateMatchScore();
+            } else {
+                log("Rakip şut çekti, kaleci kornere çeldi.");
+            }
+        } 
+        else if (rnd > 0.75) {
+            let passChance = (player.relations + 20) / 150; 
+            if(Math.random() < passChance) {
+                // Şut atılacağı zaman matchLoop'u durdur.
+                clearInterval(matchState.interval); 
+                matchState.interval = null; // Düzgün temizlik için null yap
+                log("ARA PASI GELDİ! KALECİYLE KARŞI KARŞIYASIN!", "imp");
+                setTimeout(initShooting, 1000);
+            } else {
+                log("Takım arkadaşın pas vermek yerine çalım denedi ve topu kaptırdı. (İlişkilerini yükselt)");
+            }
+        } else {
+            const fillers = ["Top orta sahada sıkıştı.", "Seyirci tezahürat yapıyor.", "Sert bir faul yapıldı."];
+            log(fillers[Math.floor(Math.random()*fillers.length)]);
+        }
+
+        if(matchState.timer >= 90) finishMatch();
+    }
+    
+    function finishMatch() {
+        clearInterval(matchState.interval);
+        matchState.interval = null; // Düzgün temizlik
+        matchState.active = false;
+        log("MAÇ BİTTİ.", "imp");
+        document.getElementById('btn-end-match').style.display = "block";
+
+        player.matchesPlayed++; 
+        simulateLeagueWeek(matchState.scoreP, matchState.scoreO);
+    }
+
+    function simulateLeagueWeek(myGoals, oppGoals) {
+        const currentTier = getTeamLeague(player.teamId);
+        const currentCountry = player.country;
+        
+        let myTeam = league.find(t => t.id === player.teamId);
+        if (myTeam) {
+            myTeam.played++;
+            if(myGoals > oppGoals) { myTeam.points += 3; myTeam.win++; }
+            else if(myGoals == oppGoals) { myTeam.points += 1; myTeam.draw++; }
+            else { myTeam.loss++; }
+        }
+
+        // Diğer takım simülasyonu (Aynı lig ve aynı ülkeden olanlar)
+        league.filter(t => t.tier === currentTier && t.country === currentCountry && t.id !== player.teamId).forEach(t => {
+            if (t.played < player.matchesPlayed) { 
+                t.played++;
+                let r = Math.random();
+                if(r < 0.33) { t.points += 3; t.win++; }
+                else if(r < 0.66) { t.points += 1; t.draw++; }
+                else { t.loss++; }
+            }
+        });
+    }
+    
+    function endMatch() {
+        let winBonus = (matchState.scoreP > matchState.scoreO) ? 10 : (matchState.scoreP == matchState.scoreO ? 3 : 0);
+        let goalBonus = matchState.currentGoals * 5; 
+        
+        let totalMoney = player.salary + winBonus + goalBonus;
+        player.money += totalMoney;
+        player.week++;
+
+        player.girlfriendRel = Math.max(0, player.girlfriendRel - 5);
+
+        updateUI();
+        switchScreen('screen-menu');
+        showMsg(`Maç kazancı: ${player.salary}$ (Maaş) + ${winBonus}$ (Prim) + ${goalBonus}$ (Gol Primi) = ${totalMoney}$`);
+        saveGame(); 
+    }
+    
+    function showNews() {
+        const contentDiv = document.getElementById('news-content');
+        contentDiv.innerHTML = '';
+        const playerName = `${player.name} ${player.surname}`;
+        
+        contentDiv.innerHTML += `<div class="news-item"><div class="news-header">TRANSFER DEDİKODUSU:</div><p>${playerName} yeteneği ${getPlayerSkill()} ile dikkat çekiyor ama hızı ${getPlayerPace()} bazen sorun yaratıyor. Kulüpler takipte.</p></div>`;
+        
+        switchScreen('screen-news');
+    }
+
+    // --- KUMARHANE (BLACKJACK 21) ---
+
+    let casinoState = {
+        bet: 0,
+        playerHand: [],
+        dealerHand: [],
+        isGameActive: false
+    };
+
+    function initCasino() {
+        const betDiv = document.getElementById('bet-options');
+        betDiv.innerHTML = '';
+        
+        BLACKJACK_BETS.forEach(bet => {
+            const btn = document.createElement('button');
+            btn.innerText = `${bet}$ OYNA`;
+            btn.className = 'btn-casino';
+            btn.onclick = () => startGameBlackjack(bet);
+            btn.disabled = player.money < bet;
+            betDiv.appendChild(btn);
+        });
+        
+        document.getElementById('casino-status').innerText = `Bahis Yap ve Oyuna Başla! (Paran: ${player.money}$)`
+        updateCasinoUI();
+    }
+
+    function showCasino() {
+        initCasino();
+        switchScreen('screen-casino');
+    }
+
+    function drawCard(isDealer = false) {
+        const val = Math.ceil(Math.random() * 13);
+        const cardValue = Math.min(10, val);
+        
+        if (isDealer) {
+            casinoState.dealerHand.push(cardValue);
+        } else {
+            casinoState.playerHand.push(cardValue);
+        }
+        return cardValue;
+    }
+
+    function calculateScore(hand) {
+        let score = hand.reduce((sum, val) => (val === 1 ? sum + 11 : sum + val), 0);
+        let aces = hand.filter(c => c === 1).length; 
+
+        while (score > 21 && aces > 0) {
+            score -= 10; 
+            aces--;
+        }
+        return score;
+    }
+    
+    function updateCasinoUI(hideDealer = true) {
+        const pScore = calculateScore(casinoState.playerHand);
+        const dScore = calculateScore(casinoState.dealerHand);
+        
+        document.getElementById('player-hand').innerHTML = casinoState.playerHand.map(c => `<div class="card-val">${c === 1 ? 'A' : c}</div>`).join('');
+        document.getElementById('player-score').innerText = pScore;
+        
+        document.getElementById('dealer-hand').innerHTML = casinoState.dealerHand.map((c, i) => 
+            `<div class="card-val">${(hideDealer && i === 0 && casinoState.isGameActive) ? '?' : (c === 1 ? 'A' : c)}</div>`
+        ).join('');
+        document.getElementById('dealer-score').innerText = hideDealer && casinoState.isGameActive ? '?' : dScore;
+
+        document.getElementById('btn-hit').disabled = !casinoState.isGameActive;
+        document.getElementById('btn-stand').disabled = !casinoState.isGameActive;
+        document.querySelectorAll('.bet-buttons button').forEach(btn => btn.disabled = casinoState.isGameActive);
+        
+        if (pScore > 21) {
+            endGameBlackjack(false, "ELİ YAKTIN! (21'i Geçtin)");
+        }
+    }
+
+    function startGameBlackjack(bet) {
+        if (player.money < bet) {
+            document.getElementById('casino-status').innerText = "Yetersiz Bakiye!";
+            return;
+        }
+        
+        player.money -= bet;
+        casinoState.bet = bet;
+        casinoState.playerHand = [];
+        casinoState.dealerHand = [];
+        casinoState.isGameActive = true;
+
+        drawCard(); drawCard(true); 
+        drawCard(); 
+
+        document.getElementById('casino-status').innerText = `Oyun Başladı! Bahis: ${bet}$`;
+        updateCasinoUI();
+        updateUI(); 
+    }
+
+    function hit() {
+        if (!casinoState.isGameActive) return;
+        drawCard();
+        updateCasinoUI();
+    }
+
+    function stand() {
+        if (!casinoState.isGameActive) return;
+        casinoState.isGameActive = false;
+
+        let dScore = calculateScore(casinoState.dealerHand);
+        while (dScore < 17) {
+            drawCard(true);
+            dScore = calculateScore(casinoState.dealerHand);
+        }
+
+        updateCasinoUI(false); 
+
+        let pScore = calculateScore(casinoState.playerHand);
+
+        if (dScore > 21 || pScore > dScore) {
+            endGameBlackjack(true, "KAZANDIN! (x2 Ödeme)");
+        } else if (pScore < dScore) {
+            endGameBlackjack(false, "KAYBETTİN! (Kasa Kazandı)");
+        } else {
+            endGameBlackjack(null, "BERABERE! (Bahis İadesi)");
+        }
+    }
+
+    function endGameBlackjack(win, message) {
+        let statusText = message;
+        
+        if (win === true) {
+            const prize = casinoState.bet * 2;
+            player.money += prize;
+            statusText += ` +${casinoState.bet}$ Kar Ettin! (Toplam ${prize}$)`;
+        } else if (win === null) {
+            player.money += casinoState.bet;
+            statusText += ` ${casinoState.bet}$ İade Edildi.`;
+        } else {
+            statusText += ` -${casinoState.bet}$ Kaybettin.`;
+        }
+
+        document.getElementById('casino-status').innerText = statusText;
+        casinoState.isGameActive = false;
+        initCasino(); 
+        updateUI();
+        saveGame();
+    }
+
+    // Şut Mekaniği (Tam)
+    
+    const cvs = document.getElementById('gameCanvas');
+    const ctx = cvs.getContext('2d');
+    
+    let shootState = 0; 
+    let animId;
+    let ball = { x: 175, y: 450, r: 8, dx: 0, dy: 0 };
+    let aimAngle = -90; 
+    let aimDir = 2; 
+    let curveVal = 0; 
+    let curveDir = 3; 
+    let keeper = { x: 175, w: 40, dir: 2 };
+
+    function initShooting() {
+        document.getElementById('shoot-overlay').style.display = 'flex';
+        document.getElementById('shoot-status').innerText = "YÖNÜ SEÇ (TIKLA)";
+        
+        ball = { x: 175, y: 450, r: 8, dx: 0, dy: 0 };
+        aimAngle = -90; 
+        curveVal = 0;
+        shootState = 1; 
+        
+        cvs.onclick = handleInput;
+        animId = requestAnimationFrame(drawShootLoop);
+    }
+
+    function handleInput() {
+        if(shootState === 1) {
+            shootState = 2; 
+            document.getElementById('shoot-status').innerText = "KAVİS VER (TIKLA)";
+        } else if (shootState === 2) {
+            shootState = 3; 
+            fireBall();
+        }
+    }
+
+    function fireBall() {
+        cvs.onclick = null;
+        let rad = (aimAngle) * (Math.PI / 180);
+        let speed = 7 + (getPlayerSkill() / 25);
+        
+        ball.dx = Math.cos(rad) * speed;
+        ball.dy = Math.sin(rad) * speed;
+    }
+
+    function drawShootLoop() {
+        ctx.fillStyle = '#1a1a1a';
+        ctx.fillRect(0,0,cvs.width, cvs.height);
+        
+        ctx.strokeStyle = "white"; ctx.lineWidth = 3;
+        ctx.strokeRect(50, 0, 250, 100); 
+        ctx.beginPath(); ctx.arc(175, 100, 40, 0, Math.PI, false); ctx.stroke(); 
+
+        ctx.fillStyle = "rgba(0,0,0,0.3)";
+        ctx.fillRect(75, 0, 200, 20);
+
+        keeper.x += keeper.dir;
+        let keeperSpeed = 2 + (getPlayerPace() / 50); 
+        if(keeper.x < 75 || keeper.x > 275 - keeper.w) keeper.dir *= -1;
+        keeper.x += keeper.dir * keeperSpeed;
+        
+        ctx.fillStyle = "#e74c3c";
+        ctx.fillRect(keeper.x, 5, keeper.w, 15);
+
+        ctx.beginPath();
+        ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+        ctx.fillStyle = "white"; ctx.fill(); ctx.stroke();
+
+        if(shootState === 1) {
+            aimAngle += aimDir;
+            if(aimAngle < -135 || aimAngle > -45) aimDir *= -1;
+            
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(aimAngle * Math.PI/180);
+            ctx.fillStyle = "yellow";
+            ctx.fillRect(0, -2, 60, 4); 
+            ctx.restore();
+        } 
+        else if (shootState === 2) {
+            ctx.save();
+            ctx.translate(ball.x, ball.y);
+            ctx.rotate(aimAngle * Math.PI/180);
+            ctx.fillStyle = "rgba(255,255,0,0.5)"; ctx.fillRect(0, -2, 60, 4);
+            ctx.restore();
+
+            curveVal += curveDir;
+            if(curveVal < -40 || curveVal > 40) curveDir *= -1;
+            
+            ctx.fillStyle = "#333";
+            ctx.fillRect(100, 400, 150, 10); 
+            ctx.fillStyle = curveVal === 0 ? "white" : (curveVal > 0 ? "orange" : "cyan"); 
+            ctx.fillRect(175, 400, curveVal, 10); 
+            
+            ctx.fillStyle="white"; ctx.font="12px Arial";
+            ctx.fillText("Sol Kavis", 100, 390);
+            ctx.fillText("Sağ Kavis", 200, 390);
+        }
+        else if (shootState === 3) {
+            ball.dx += (curveVal / 800); 
+            
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+
+            if(ball.y < 20) {
+                if(ball.x > 75 && ball.x < 275) {
+                    if(ball.x > keeper.x && ball.x < keeper.x + keeper.w) {
+                        endShoot(false, "KALECİ!"); return;
+                    } else {
+                        endShoot(true, "GOOOL!"); return;
+                    }
+                } else if (ball.y < 5) { 
+                    endShoot(false, "ÜSTTEN AUT!"); return;
+                }
+            }
+            if(ball.x < 0 || ball.x > 350 || ball.y > 500) {
+                endShoot(false, "DIŞARI!"); return;
+            }
+        }
+
+        animId = requestAnimationFrame(drawShootLoop);
+    }
+    
+    function endShoot(success, text) {
+        cancelAnimationFrame(animId);
+        document.getElementById('shoot-status').innerText = text;
+        
+        setTimeout(() => {
+            document.getElementById('shoot-overlay').style.display = 'none';
+            if(success) {
+                matchState.scoreP++;
+                player.goals++; 
+                matchState.currentGoals++; 
+                log("MUHTEŞEM BİR GOL!", "imp");
+                updateMatchScore();
+            } else {
+                log("Pozisyon kaçtı...");
+            }
+            
+            // HATA DÜZELTME GÜNCELLEMESİ: Maç motoru döngüsü sadece bir kez yeniden başlatılacak.
+            if (!matchState.interval) {
+                matchState.interval = setInterval(gameLoop, 800);
+            }
+            
+        }, 1500);
+    }
+    
+</script>
+</body>
+</html>
